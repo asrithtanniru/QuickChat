@@ -1,43 +1,70 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
-import Dashboard from "./pages/Dashboard"
-import Clients from "./pages/Clients"
-import ClientDetails from "./pages/ClientDetails"
-import AddClient from "./pages/AddClient"
-import Projects from "./pages/Projects"
-import ProjectDetails from "./pages/ProjectDetails"
-import AddProject from "./pages/AddProject"
-import Invoices from "./pages/Invoices"
-import InvoiceDetails from "./pages/InvoiceDetails"
-// import Login from "./pages/Login"
-// import Register from "./pages/Register"
-import Settings from "./pages/Settings"
-import AuthPage from "./pages/Auth"
-import "./App.css"
-import DashboardLayout from "./layouts/DashboardLayout"
-const router = createBrowserRouter([
-  {
-    path: "/auth",
-    element: <AuthPage />,
-  },
-  {
-    path: "/",
-    element: <DashboardLayout />,
-    children: [
-      { path: "dashboard", element: <Dashboard /> },
-      { path: "clients", element: <Clients /> },
-      { path: "clients/add", element: <AddClient /> },
-      { path: "clients/:id", element: <ClientDetails /> },
-      { path: "projects", element: <Projects /> },
-      { path: "projects/add", element: <AddProject /> },
-      { path: "projects/:id", element: <ProjectDetails /> },
-      { path: "invoices", element: <Invoices /> },
-      { path: "invoices/:id", element: <InvoiceDetails /> },
-      { path: "settings", element: <Settings /> },
-    ],
-  },
-  { path: "*", element: <Navigate to="/" replace /> },
-])
+import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './config/firebase';
+import SignIn from './components/SignIn';
+import RoomLobby from './components/RoomLobby';
+import ChatRoom from './components/ChatRoom';
 
 export default function App() {
-  return <RouterProvider router={router} />
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [roomId, setRoomId] = useState('');
+  const [inRoom, setInRoom] = useState(false);
+
+  // listening for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleCreateRoom = (newRoomId) => {
+    setRoomId(newRoomId);
+    setInRoom(true);
+  };
+
+  const handleJoinRoom = (roomIdToJoin) => {
+    setRoomId(roomIdToJoin);
+    setInRoom(true);
+  };
+
+  const handleLeaveRoom = () => {
+    setInRoom(false);
+    setRoomId('');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <span className="loading loading-dots loading-lg"></span>
+      </div>
+    );
+  }
+
+  // Not signed in
+  if (!user) {
+    return <SignIn />;
+  }
+
+  // Signed in but not in a room
+  if (!inRoom) {
+    return (
+      <RoomLobby 
+        user={user} 
+        onCreateRoom={handleCreateRoom} 
+        onJoinRoom={handleJoinRoom} 
+      />
+    );
+  }
+
+  // In a chat room
+  return (
+    <ChatRoom 
+      user={user} 
+      roomId={roomId} 
+      onLeaveRoom={handleLeaveRoom} 
+    />
+  );
 }
