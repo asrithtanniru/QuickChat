@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { auth } from './config/firebase';
 import SignIn from './components/SignIn';
 import RoomLobby from './components/RoomLobby';
@@ -9,30 +10,33 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roomId, setRoomId] = useState('');
-  const [inRoom, setInRoom] = useState(false);
+  const navigate = useNavigate();
 
   // listening for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      if (!currentUser) {
+        navigate('/signin', { replace: true });
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const handleCreateRoom = (newRoomId) => {
     setRoomId(newRoomId);
-    setInRoom(true);
+    navigate('/chat');
   };
 
   const handleJoinRoom = (roomIdToJoin) => {
     setRoomId(roomIdToJoin);
-    setInRoom(true);
+    navigate('/chat');
   };
 
   const handleLeaveRoom = () => {
-    setInRoom(false);
     setRoomId('');
+    navigate('/join');
   };
 
   if (loading) {
@@ -43,28 +47,43 @@ export default function App() {
     );
   }
 
-  // Not signed in
-  if (!user) {
-    return <SignIn />;
-  }
-
-  // Signed in but not in a room
-  if (!inRoom) {
-    return (
-      <RoomLobby 
-        user={user} 
-        onCreateRoom={handleCreateRoom} 
-        onJoinRoom={handleJoinRoom} 
-      />
-    );
-  }
-
-  // In a chat room
   return (
-    <ChatRoom 
-      user={user} 
-      roomId={roomId} 
-      onLeaveRoom={handleLeaveRoom} 
-    />
+    <Routes>
+      <Route
+        path="/signin"
+        element={
+          !user ? <SignIn /> : <Navigate to="/join" replace />
+        }
+      />
+      <Route
+        path="/join"
+        element={
+          user ? (
+            <RoomLobby
+              user={user}
+              onCreateRoom={handleCreateRoom}
+              onJoinRoom={handleJoinRoom}
+            />
+          ) : (
+            <Navigate to="/signin" replace />
+          )
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          user && roomId ? (
+            <ChatRoom
+              user={user}
+              roomId={roomId}
+              onLeaveRoom={handleLeaveRoom}
+            />
+          ) : (
+            <Navigate to={user ? "/join" : "/signin"} replace />
+          )
+        }
+      />
+      <Route path="*" element={<Navigate to={user ? "/join" : "/signin"} replace />} />
+    </Routes>
   );
 }
