@@ -6,6 +6,8 @@ A real-time chat application that enables users to create and join chat rooms se
 
 QuickChat is a web-based chat application built with modern technologies. Users can sign in, create new chat rooms, join existing rooms, and participate in real-time conversations with other users.
 
+Live Demo Link: https://quick-chat-qc.vercel.app/
+
 Report: https://docs.google.com/document/d/1ESy8VtVRHoS5D6-1oRHA1SFa7OgxIV-AyoBSt53agzU/edit?usp=sharing
 
 Project Demonstration: https://drive.google.com/file/d/15bxCJl535Dqaxd-dx5YKB77EGMuzyukn/view?usp=sharing
